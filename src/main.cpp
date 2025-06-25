@@ -4,46 +4,47 @@
 #include "sensors/sensors.h"
 
 
+#include <Arduino.h>
+#include "core/network.h"
+#include "services/motion.h"
+#include "sensors/sensors.h"
+
+unsigned long lastCommandTime = 0;
+int prevLeft = 999;
+int prevRight = 999;
+
 void processClientCommand(WiFiClient& client) {
-    while (!client.available()) delay(1);
+    while (client.available()) {
+        String line = client.readStringUntil('\n');
+        line.trim();
 
-    String line = client.readStringUntil('\n');
-    line.trim();
-    client.stop();
+        int sp = line.indexOf(' ');
+        if (sp <= 0) {
+            Serial.println("Invalid command. Skipped.");
+            continue;
+        }
 
-    int sp = line.indexOf(' ');
-    String cmd = (sp > 0 ? line.substring(0, sp) : line);
-    int speed = (sp > 0 ? line.substring(sp + 1).toInt() : 255);
+        String leftStr = line.substring(0, sp);
+        String rightStr = line.substring(sp + 1);
+        leftStr.trim(); rightStr.trim();
 
-    bool upsideDown = isUpsideDown();
+        int left = leftStr.toInt();
+        int right = rightStr.toInt();
 
-    if (upsideDown) {
-        Serial.println("INFO: Robot is upside down — applying inverted control mapping.");
-    }
+        if (left < -255 || left > 255 || right < -255 || right > 255) {
+            Serial.println("Out-of-range speeds. Skipped.");
+            continue;
+        }
 
-    if (cmd == "FORWARD") {
-        if (upsideDown) drive(-speed, -speed);  
-        else            drive(+speed, +speed);
-    }
-    else if (cmd == "BACK") {
-        if (upsideDown) drive(+speed, +speed);
-        else            drive(-speed, -speed);
-    }
-    else if (cmd == "LEFT") {
-        if (upsideDown) drive(+speed, -speed);
-        else            drive(-speed, +speed);
-    }
-    else if (cmd == "RIGHT") {
-        if (upsideDown) drive(-speed, +speed);  
-        else            drive(+speed, -speed);
-    }
-    else {
-        drive(0, 0);
-    }
+        if (left == prevLeft && right == prevRight) continue;
+        prevLeft = left;
+        prevRight = right;
 
-    Serial.printf("Got: %s %d\n", cmd.c_str(), speed);
+        arcMove(left, right);
+        lastCommandTime = millis();
+        Serial.printf("Got: L=%d, R=%d\n", left, right);
+    }
 }
-
 
 void setup() {
     Serial.begin(115200);
@@ -55,10 +56,25 @@ void setup() {
 void loop() {
     sensorsUpdate();
 
-    WiFiClient client = checkForClient();
-    if (client) {
-        processClientCommand(client);
+    static WiFiClient activeClient;
+    WiFiClient newClient = checkForClient();
+
+    if (newClient) {
+        if (!activeClient || !activeClient.connected()) {
+            activeClient = newClient;
+            Serial.println("Client connected");
+        }
     }
 
-    delay(100);
+    if (activeClient && activeClient.connected()) {
+        processClientCommand(activeClient);
+    } else {
+        activeClient.stop();
+    }
+
+    if (millis() - lastCommandTime > 500) {
+        arcMove(0, 0);
+    }
+
+    delay(20);
 }

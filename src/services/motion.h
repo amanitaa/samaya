@@ -1,4 +1,5 @@
 #pragma once
 
 void motionSetup();
-void drive(int leftSpeed, int rightSpeed);
+void arcMove(int leftSpeed, int rightSpeed);
+void stopMotors();
