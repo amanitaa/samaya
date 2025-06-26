@@ -4,14 +4,11 @@
 #include "sensors/sensors.h"
 
 
-#include <Arduino.h>
-#include "core/network.h"
-#include "services/motion.h"
-#include "sensors/sensors.h"
-
+int currentLeft = 0;
+int currentRight = 0;
+const unsigned long TIMEOUT_MS = 500;
 unsigned long lastCommandTime = 0;
-int prevLeft = 999;
-int prevRight = 999;
+
 
 void processClientCommand(WiFiClient& client) {
     while (client.available()) {
@@ -19,32 +16,28 @@ void processClientCommand(WiFiClient& client) {
         line.trim();
 
         int sp = line.indexOf(' ');
-        if (sp <= 0) {
-            Serial.println("Invalid command. Skipped.");
-            continue;
+        if (sp <= 0) return;
+
+        int left = line.substring(0, sp).toInt();
+        int right = line.substring(sp + 1).toInt();
+
+        if (left < -255 || left > 255 || right < -255 || right > 255) return;
+
+        if (isUpsideDown()) {
+            Serial.println("INFO: Robot is upside down — inverting motion.");
+            left = -left;
+            right = -right;
         }
 
-        String leftStr = line.substring(0, sp);
-        String rightStr = line.substring(sp + 1);
-        leftStr.trim(); rightStr.trim();
-
-        int left = leftStr.toInt();
-        int right = rightStr.toInt();
-
-        if (left < -255 || left > 255 || right < -255 || right > 255) {
-            Serial.println("Out-of-range speeds. Skipped.");
-            continue;
-        }
-
-        if (left == prevLeft && right == prevRight) continue;
-        prevLeft = left;
-        prevRight = right;
-
-        arcMove(left, right);
+        currentLeft = left;
+        currentRight = right;
         lastCommandTime = millis();
-        Serial.printf("Got: L=%d, R=%d\n", left, right);
+
+        Serial.printf("Processed: L=%d, R=%d\n", left, right);
     }
 }
+
+
 
 void setup() {
     Serial.begin(115200);
@@ -72,8 +65,12 @@ void loop() {
         activeClient.stop();
     }
 
-    if (millis() - lastCommandTime > 500) {
+    unsigned long now = millis();
+
+    if (now - lastCommandTime > TIMEOUT_MS) {
         arcMove(0, 0);
+    } else {
+        arcMove(currentLeft, currentRight);
     }
 
     delay(20);
