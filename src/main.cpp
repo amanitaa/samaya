@@ -39,8 +39,6 @@ void processClientCommand(WiFiClient& client) {
     }
 }
 
-
-
 void setup() {
     Serial.begin(115200);
     motionSetup();
