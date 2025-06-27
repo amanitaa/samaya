@@ -25,6 +25,8 @@ void processClientCommand(WiFiClient& client) {
 
         if (isUpsideDown()) {
             Serial.println("INFO: Robot is upside down — inverting motion.");
+            arcMove(0, 0);
+            delay(100);
             left = -left;
             right = -right;
         }
