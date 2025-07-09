@@ -13,11 +13,15 @@ int currentRight = 0;
 const unsigned long TIMEOUT_MS = 500;
 unsigned long lastCommandTime = 0;
 
+struct ControlPackage {
+  int16_t left;
+  int16_t right;
+};
 
-void processCommand(byte receivedData) {
-    // TODO REFACTOR TO STRUCT MAYBE?
-    int left = map(receivedData, 0, 255, -255, 255);
-    int right = left;
+
+void processCommand(ControlPackage& command) {
+    int left = command.left;
+    int right = command.right;
 
     if (left < -255 || left > 255 || right < -255 || right > 255) return;
 
@@ -33,7 +37,7 @@ void processCommand(byte receivedData) {
     currentRight = right;
     lastCommandTime = millis();
 
-    // Serial.println("Processed: L=%d, R=%d\n", left, right);
+    // Serial.printf("Processed: L=%d, R=%d\n", left, right);
 }
 
 void setup() {
@@ -56,11 +60,11 @@ void setup() {
 void loop() {
     sensorsUpdate();
 
-    byte receivedData;
-    if (receiveMessage(radio, &receivedData, 1)) {
+    ControlPackage receivedData;
+    if (receiveMessage(radio, &receivedData, sizeof(ControlPackage))) {
         processCommand(receivedData);
 
-        byte ackData = receivedData + 1;
+        byte ackData = (byte)(receivedData.left + 1);
         radio.writeAckPayload(1, &ackData, 1);
     }
 
