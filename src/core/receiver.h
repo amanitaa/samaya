@@ -1,12 +1,10 @@
-#pragma once
+#ifndef RECEIVER_H
+#define RECEIVER_H
+
 #include <RF24.h>
-#include <SPI.h>
 
-struct ControlPackage {
-    byte left;
-    byte right;
-};
+void setupRadio(RF24& radio);
+bool sendMessage(RF24& radio, const void* data, uint8_t size, byte* response);
+bool receiveMessage(RF24& radio, void* data, uint8_t size);
 
-void radioSetup();
-bool checkForRadio();
-ControlPackage checkForCurrentCommand();
+#endif

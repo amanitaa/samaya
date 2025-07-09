@@ -1,48 +1,47 @@
+#include <Arduino.h>
 #include "receiver.h"
 
-static RF24 radio(4, 5);
-const byte address[6] = "00001";
+const byte TX_ADDRESS[6] = "1Node";
+const byte RX_ADDRESS[6] = "2Node";
 
-ControlPackage currentPackage = {0, 0};
+#define RF_CHANNEL 0x60
+#define RF_PA_LEVEL RF24_PA_MAX
+#define RF_DATA_RATE RF24_250KBPS
+#define RF_AUTO_ACK true
+#define RF_RETRIES_DELAY 0
+#define RF_RETRIES_COUNT 15
+#define RF_PAYLOAD_SIZE 32
+#define RF_ACK_PAYLOAD true
 
-static unsigned long lastReceiveTime = 0;
-static const unsigned long TIMEOUT_MS = 500;
-
-void radioSetup() {
-    if (!radio.begin()) {
-        Serial.println("[ERROR] RF24 failed to initialize");
-        while (true);
-    }
-
-    radio.setPALevel(RF24_PA_HIGH);
-    radio.setDataRate(RF24_1MBPS);
-    radio.setChannel(108);
-    radio.openReadingPipe(0, address);
-    radio.startListening();
-
-    Serial.println("[INFO] RF24 receiver initialized");
+void setupRadio(RF24& radio) {
+  radio.setPALevel(RF_PA_LEVEL);
+  radio.setDataRate(RF_DATA_RATE);
+  radio.setChannel(RF_CHANNEL);
+  radio.setAutoAck(RF_AUTO_ACK);
+  radio.setRetries(RF_RETRIES_DELAY, RF_RETRIES_COUNT);
+  radio.setPayloadSize(RF_PAYLOAD_SIZE);
+  if (RF_ACK_PAYLOAD) {
+    radio.enableAckPayload();
+  }
+  radio.openReadingPipe(1, TX_ADDRESS);
+  radio.openWritingPipe(RX_ADDRESS);
+  radio.powerUp();
 }
 
-bool checkForRadio() {
-    if (radio.available()) {
-        ControlPackage incoming;
-        radio.read(&incoming, sizeof(incoming));
-
-        incoming.left = constrain(incoming.left, -255, 255);
-        incoming.right = constrain(incoming.right, -255, 255);
-
-        currentPackage = incoming;
-        lastReceiveTime = millis();
-
-        Serial.printf("[RF24] Received: L=%d, R=%d\n", incoming.left, incoming.right);
-        return true;
-    }
-    return false;
+bool sendMessage(RF24& radio, const void* data, uint8_t size, byte* response) {
+  radio.stopListening();
+  bool success = radio.write(data, size);
+  if (success && radio.available()) {
+    radio.read(response, 1);
+    return true;
+  }
+  return false;
 }
 
-ControlPackage checkForCurrentCommand() {
-    if (millis() - lastReceiveTime > TIMEOUT_MS) {
-        return ControlPackage{0, 0};
-    }
-    return currentPackage;
+bool receiveMessage(RF24& radio, void* data, uint8_t size) {
+  if (radio.available()) {
+    radio.read(data, size);
+    return true;
+  }
+  return false;
 }
