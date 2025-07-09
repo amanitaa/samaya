@@ -3,6 +3,10 @@
 #include "core/receiver.h"
 #include "sensors/sensors.h"
 
+#define CE_PIN A2
+#define CSN_PIN A3
+
+RF24 radio(CE_PIN, CSN_PIN);
 
 int currentLeft = 0;
 int currentRight = 0;
@@ -10,9 +14,10 @@ const unsigned long TIMEOUT_MS = 500;
 unsigned long lastCommandTime = 0;
 
 
-void processCommand(ControlPackage& command) {
-    int left = command.left;
-    int right = command.left;
+void processCommand(byte receivedData) {
+    // TODO REFACTOR TO STRUCT MAYBE?
+    int left = map(receivedData, 0, 255, -255, 255);
+    int right = left;
 
     if (left < -255 || left > 255 || right < -255 || right > 255) return;
 
@@ -28,23 +33,35 @@ void processCommand(ControlPackage& command) {
     currentRight = right;
     lastCommandTime = millis();
 
-    Serial.printf("Processed: L=%d, R=%d\n", left, right);
+    // Serial.println("Processed: L=%d, R=%d\n", left, right);
 }
 
 void setup() {
     Serial.begin(115200);
     motionSetup();
-    radioSetup();
     sensorsSetup();
+    if (!radio.begin()) {
+        Serial.println("Radio initialization failed!");
+        while (1);
+    }
+    radioSetup(radio);
+    radio.startListening();
+    Serial.println("Receiver initialized");
+
+    byte ackData = 0xAA;
+    radio.writeAckPayload(1, &ackData, 1);
 }
+
 
 void loop() {
     sensorsUpdate();
 
-    bool radioUpdate = checkForRadio();
-    if (radioUpdate) {
-        ControlPackage command = checkForCurrentCommand();
-        processCommand(command);
+    byte receivedData;
+    if (receiveMessage(radio, &receivedData, 1)) {
+        processCommand(receivedData);
+
+        byte ackData = receivedData + 1;
+        radio.writeAckPayload(1, &ackData, 1);
     }
 
     unsigned long now = millis();

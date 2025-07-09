@@ -13,7 +13,7 @@ const byte RX_ADDRESS[6] = "2Node";
 #define RF_PAYLOAD_SIZE 32
 #define RF_ACK_PAYLOAD true
 
-void setupRadio(RF24& radio) {
+void radioSetup(RF24& radio) {
   radio.setPALevel(RF_PA_LEVEL);
   radio.setDataRate(RF_DATA_RATE);
   radio.setChannel(RF_CHANNEL);
