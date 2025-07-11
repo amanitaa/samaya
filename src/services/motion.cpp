@@ -34,11 +34,6 @@ void arcMove(int leftSpeed, int rightSpeed) {
         digitalWrite(RIGHT_IN2, HIGH);
         analogWrite(RIGHT_IN1, abs(rightSpeed));
     }
-
-    Serial.print("Left=");
-    Serial.print(leftSpeed);
-    Serial.print(", Right=");
-    Serial.println(rightSpeed);
 }
 
 void stopMotors() {

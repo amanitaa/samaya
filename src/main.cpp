@@ -36,10 +36,10 @@ void processCommand(ControlPackage& command) {
     currentRight = right;
     lastCommandTime = millis();
 
-    Serial.print("Processed: L=");
-    Serial.print(left);
-    Serial.print(", R=");
-    Serial.println(right);
+    // Serial.print("Processed: L=");
+    // Serial.print(left);
+    // Serial.print(", R=");
+    // Serial.println(right);
 }
 
 void setup() {
@@ -51,10 +51,9 @@ void setup() {
         while (1);
     }
     setupRadio(radio);
-    radio.startListening();
     Serial.println("Receiver initialized");
 
-    StatusPackage ackData = {isUpsideDown()};
+    StatusPackage ackData = {true};
     radio.writeAckPayload(1, &ackData, sizeof(StatusPackage));
 }
 
