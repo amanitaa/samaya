@@ -18,7 +18,6 @@ struct ControlPackage {
   int16_t right;
 };
 
-
 void processCommand(ControlPackage& command) {
     int left = command.left;
     int right = command.right;
@@ -37,35 +36,37 @@ void processCommand(ControlPackage& command) {
     currentRight = right;
     lastCommandTime = millis();
 
-    // Serial.printf("Processed: L=%d, R=%d\n", left, right);
+    Serial.print("Processed: L=");
+    Serial.print(left);
+    Serial.print(", R=");
+    Serial.println(right);
 }
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     motionSetup();
-    sensorsSetup();
+    // sensorsSetup();
     if (!radio.begin()) {
         Serial.println("Radio initialization failed!");
         while (1);
     }
-    radioSetup(radio);
+    setupRadio(radio);
     radio.startListening();
     Serial.println("Receiver initialized");
 
-    byte ackData = 0xAA;
-    radio.writeAckPayload(1, &ackData, 1);
+    StatusPackage ackData = {isUpsideDown()};
+    radio.writeAckPayload(1, &ackData, sizeof(StatusPackage));
 }
 
-
 void loop() {
-    sensorsUpdate();
+    // sensorsUpdate();
 
     ControlPackage receivedData;
     if (receiveMessage(radio, &receivedData, sizeof(ControlPackage))) {
         processCommand(receivedData);
 
-        byte ackData = (byte)(receivedData.left + 1);
-        radio.writeAckPayload(1, &ackData, 1);
+        StatusPackage ackData = {isUpsideDown()};
+        radio.writeAckPayload(1, &ackData, sizeof(StatusPackage));
     }
 
     unsigned long now = millis();
