@@ -50,25 +50,25 @@ void setup() {
     }
     setupRadio(radio);
     Serial.println("Receiver initialized");
-
-    StatusPackage ackData = {isUpsideDown()};
-    radio.writeAckPayload(1, &ackData, sizeof(StatusPackage));
 }
 
 void loop() {
     // sensorsUpdate();
 
     ControlPackage receivedData;
-    if (receiveMessage(radio, &receivedData, sizeof(ControlPackage))) {
-        processCommand(receivedData);
-
+    if (radio.available()) {
+        while (radio.available()) {                                 
+            radio.read(&receivedData, sizeof(ControlPackage) );          
+            processCommand(receivedData);
+        }
+        radio.stopListening();                                        
         StatusPackage ackData = {
             .isUpsideDown = isUpsideDown(),
             .liionPercent = readLiIonPercentage(),
             .lipoPercent = readLiPoPercentage()
         };
-        radio.writeAckPayload(1, &ackData, sizeof(StatusPackage));
-        Serial.print('sent ack back');
+        radio.write(&ackData, sizeof(StatusPackage) );              
+        radio.startListening();
     }
 
     unsigned long now = millis();
