@@ -45,7 +45,6 @@ bool sendMessage(RF24& radio, const void* data, uint8_t size, StatusPackage* sta
 bool receiveMessage(RF24& radio, void* data, uint8_t size) {
   if (radio.available()) {
     radio.read(data, size);
-    Serial.println("Data received");
     return true;
   }
   return false;

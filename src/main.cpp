@@ -2,6 +2,7 @@
 #include "services/motion.h"
 #include "core/receiver.h"
 #include "sensors/sensors.h"
+#include "sensors/battery.h"
 
 #define CE_PIN A2
 #define CSN_PIN A3
@@ -36,15 +37,16 @@ void processCommand(ControlPackage& command) {
     currentRight = right;
     lastCommandTime = millis();
 
-    // Serial.print("Processed: L=");
-    // Serial.print(left);
-    // Serial.print(", R=");
-    // Serial.println(right);
+    Serial.print("Processed: L=");
+    Serial.print(left);
+    Serial.print(", R=");
+    Serial.println(right);
 }
 
 void setup() {
     Serial.begin(9600);
     motionSetup();
+    batterySetup();
     // sensorsSetup();
     if (!radio.begin()) {
         Serial.println("Radio initialization failed!");
@@ -53,7 +55,7 @@ void setup() {
     setupRadio(radio);
     Serial.println("Receiver initialized");
 
-    StatusPackage ackData = {true};
+    StatusPackage ackData = {isUpsideDown()};
     radio.writeAckPayload(1, &ackData, sizeof(StatusPackage));
 }
 
@@ -64,8 +66,13 @@ void loop() {
     if (receiveMessage(radio, &receivedData, sizeof(ControlPackage))) {
         processCommand(receivedData);
 
-        StatusPackage ackData = {isUpsideDown()};
+        StatusPackage ackData = {
+            .isUpsideDown = isUpsideDown(),
+            .liionPercent = readLiIonPercentage(),
+            .lipoPercent = readLiPoPercentage()
+        };
         radio.writeAckPayload(1, &ackData, sizeof(StatusPackage));
+        Serial.print('sent ack back');
     }
 
     unsigned long now = millis();

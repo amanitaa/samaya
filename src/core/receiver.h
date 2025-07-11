@@ -7,6 +7,8 @@
 
 struct StatusPackage {
   bool isUpsideDown;
+  uint8_t batteryPercent;
+
 };
 
 void setupRadio(RF24& radio);
