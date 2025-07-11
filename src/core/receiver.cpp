@@ -4,8 +4,10 @@
 #include <nRF24L01.h>
 #include "receiver.h"
 
-byte controller_node[6] = "NodeA";
-byte samaya_node[6] = "NodeB";
+byte controller_node[6] = "0768";
+byte samaya_node[6] = "3163";
+
+const uint8_t channel = 88;
 
 #define RF_PA_LEVEL RF24_PA_MAX
 #define RF_DATA_RATE RF24_250KBPS
@@ -19,6 +21,7 @@ void setupRadio(RF24& radio) {
   size_t maxPayloadSize = max(sizeof(ControlPackage), sizeof(StatusPackage));
   radio.setPayloadSize(maxPayloadSize);
   radio.setPALevel(RF24_PA_LOW);
+  radio.setChannel(channel);
   radio.openWritingPipe(controller_node);
   radio.openReadingPipe(1, samaya_node);
   radio.startListening();
