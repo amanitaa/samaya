@@ -19,7 +19,8 @@ void setupRadio(RF24& radio) {
   // radio.setChannel(RF_CHANNEL);
   // radio.setAutoAck(RF_AUTO_ACK);
   // radio.setRetries(RF_RETRIES_DELAY, RF_RETRIES_COUNT);
-  // radio.setPayloadSize(RF_PAYLOAD_SIZE);
+  size_t maxPayloadSize = max(sizeof(ControlPackage), sizeof(StatusPackage));
+  radio.setPayloadSize(maxPayloadSize);
   radio.openReadingPipe(1, slaveAddress);
   radio.enableAckPayload();
   radio.startListening();

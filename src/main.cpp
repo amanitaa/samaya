@@ -14,10 +14,6 @@ int currentRight = 0;
 const unsigned long TIMEOUT_MS = 500;
 unsigned long lastCommandTime = 0;
 
-struct ControlPackage {
-  int16_t left;
-  int16_t right;
-};
 
 void processCommand(ControlPackage& command) {
     int left = command.left;
