@@ -9,15 +9,15 @@
 
 RF24 radio(CE_PIN, CSN_PIN);
 
-int currentLeft = 0;
-int currentRight = 0;
+int16_t currentLeft = 0;
+int16_t currentRight = 0;
 const unsigned long TIMEOUT_MS = 500;
 unsigned long lastCommandTime = 0;
 
 
 void processCommand(ControlPackage& command) {
-    int left = command.left;
-    int right = command.right;
+    int16_t left = command.left;
+    int16_t right = command.right;
 
     if (left < -255 || left > 255 || right < -255 || right > 255) return;
 
@@ -59,7 +59,11 @@ void loop() {
     if (radio.available()) {
         while (radio.available()) {                                 
             radio.read(&receivedData, sizeof(ControlPackage) );          
-            processCommand(receivedData);
+                Serial.print("Processed DEDANATIREBI: L=");
+                Serial.print(receivedData.left);
+                Serial.print(", R=");
+                Serial.println(receivedData.right);
+            // processCommand(receivedData);
         }
         radio.stopListening();                                        
         StatusPackage ackData = {
