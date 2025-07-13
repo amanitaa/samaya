@@ -15,10 +15,7 @@ const unsigned long TIMEOUT_MS = 500;
 unsigned long lastCommandTime = 0;
 
 
-void processCommand(ControlPackage& command) {
-    int16_t left = command.left;
-    int16_t right = command.right;
-
+void processCommand(int16_t left, int16_t right) {
     if (left < -255 || left > 255 || right < -255 || right > 255) return;
 
     if (isUpsideDown()) {
@@ -55,24 +52,30 @@ void setup() {
 void loop() {
     // sensorsUpdate();
 
-    ControlPackage receivedData;
+    char receivedDataString[16];
+
     if (radio.available()) {
-        while (radio.available()) {                                 
-            radio.read(&receivedData, sizeof(ControlPackage) );          
-                Serial.print("Processed DEDANATIREBI: L=");
-                Serial.print(receivedData.left);
-                Serial.print(", R=");
-                Serial.println(receivedData.right);
-            // processCommand(receivedData);
+        while (radio.available()) {                                   
+            radio.read(&receivedDataString, sizeof(receivedDataString) );            
+            int16_t receivedLeft, receivedRight;
+            Serial.print(F("Got message '"));
+            Serial.print(receivedDataString);
+            if (sscanf(receivedDataString, "L%dR%d", &receivedLeft, &receivedRight) == 2) {
+                processCommand(receivedLeft, receivedRight);
+            } else {
+                Serial.print("Error parsing: ");
+                Serial.println(receivedDataString);
+            }
         }
         radio.stopListening();                                        
-        StatusPackage ackData = {
+        StatusPackage responseData = {
             .isUpsideDown = isUpsideDown(),
             .liionPercent = readLiIonPercentage(),
             .lipoPercent = readLiPoPercentage()
         };
-        radio.write(&ackData, sizeof(StatusPackage) );              
+        radio.write(&responseData, sizeof(StatusPackage));
         radio.startListening();
+
     }
 
     unsigned long now = millis();

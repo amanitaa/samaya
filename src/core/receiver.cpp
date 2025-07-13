@@ -18,8 +18,7 @@ const uint8_t channel = 88;
 
 void setupRadio(RF24& radio) {
   radio.begin();
-  size_t maxPayloadSize = max(sizeof(ControlPackage), sizeof(StatusPackage));
-  radio.setPayloadSize(maxPayloadSize);
+  radio.setPayloadSize(32);
   radio.setPALevel(RF24_PA_LOW);
   radio.setChannel(channel);
   radio.openWritingPipe(controller_node);
