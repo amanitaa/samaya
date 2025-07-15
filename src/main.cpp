@@ -40,7 +40,7 @@ void setup() {
     Serial.begin(9600);
     motionSetup();
     batterySetup();
-    // sensorsSetup();
+    sensorsSetup();
     if (!radio.begin()) {
         Serial.println("Radio initialization failed!");
         while (1);
@@ -50,7 +50,7 @@ void setup() {
 }
 
 void loop() {
-    // sensorsUpdate();
+    sensorsUpdate();
 
     char receivedDataString[16];
 
