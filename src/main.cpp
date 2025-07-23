@@ -8,6 +8,7 @@
 #define CE_PIN A2
 #define CSN_PIN A3
 #define TIMEOUT_MS 500
+#define BATTERY_PRINT_INTERVAL 5000
 
 RF24 radio(CE_PIN, CSN_PIN);
 
@@ -15,6 +16,7 @@ int16_t currentLeft = 0;
 int16_t currentRight = 0;
 int currentBLDCPercentage = 0;
 unsigned long lastCommandTime = 0;
+unsigned long lastBatteryPrint = 0;
 
 void processCommand(int16_t left, int16_t right, int bldcPercentage) {
   if (left < -255 || left > 255 || right < -255 || right > 255) {
@@ -75,7 +77,7 @@ void loop() {
       if (sscanf(receivedDataString, "L%dR%dB%d", &receivedLeft, &receivedRight, &bldcPercentage) == 3) {
         processCommand(receivedLeft, receivedRight, bldcPercentage);
       } else if (sscanf(receivedDataString, "L%dR%d", &receivedLeft, &receivedRight) == 2) {
-        processCommand(receivedLeft, receivedRight, currentBLDCPercentage); // Keep last BLDC speed
+        processCommand(receivedLeft, receivedRight, currentBLDCPercentage);
         Serial.println("No BLDC percentage in message, using last value");
       } else {
         Serial.print("Error parsing: ");
@@ -84,10 +86,17 @@ void loop() {
     }
     radio.stopListening();
     StatusPackage responseData = {
-      .isUpsideDown = isUpsideDown(),
-      .liionPercent = readLiIonPercentage(),
-      .lipoPercent = readLiPoPercentage()
+      isUpsideDown(),
+      readLiIonPercentage(),
+      readLiPoPercentage()
     };
+    Serial.print("Sending Status: UpsideDown=");
+    Serial.print(responseData.isUpsideDown);
+    Serial.print(", Li-ion=");
+    Serial.print(responseData.liionPercent);
+    Serial.print("%, LiPo=");
+    Serial.print(responseData.lipoPercent);
+    Serial.println("%");
     radio.write(&responseData, sizeof(StatusPackage));
     Serial.println("Status sent back");
     radio.startListening();
@@ -95,11 +104,15 @@ void loop() {
   unsigned long now = millis();
   if (now - lastCommandTime > TIMEOUT_MS) {
     arcMove(0, 0);
-    bldcSpeedControl(0); // Stop BLDC motor on timeout
+    bldcSpeedControl(0);
     currentLeft = 0;
     currentRight = 0;
     currentBLDCPercentage = 0;
     Serial.println("Timeout: Stopped motors and BLDC");
+  }
+  if (now - lastBatteryPrint >= BATTERY_PRINT_INTERVAL) {
+    printBatteryStatus();
+    lastBatteryPrint = now;
   }
   delay(20);
 }
