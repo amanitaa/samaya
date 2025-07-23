@@ -2,6 +2,7 @@
 #define BATTERY_H
 
 void batterySetup();
+void printBatteryStatus();
 float readLiIonVoltage();
 float readLiPoVoltage();
 uint8_t readLiIonPercentage();
