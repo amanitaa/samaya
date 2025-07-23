@@ -5,11 +5,16 @@
 Servo esc;
 const int escPin = 10;
 
-void weaponSetup() {
-  esc.attach(escPin, 1000, 2000);
+void armESC() {
+  esc.writeMicroseconds(2000);
+  delay(2000);
   esc.writeMicroseconds(1000);
   delay(2000);
-  Serial.println("ESC Initialized");
+}
+
+void weaponSetup() {
+  esc.attach(escPin, 1000, 2000);
+  armESC();
 }
 
 void bldcSpeedControl(int percentage) {
@@ -31,4 +36,10 @@ void bldcSpeedControl(int percentage) {
   Serial.print(pulse);
   Serial.println("µs)");
   delay(20);
+}
+
+void recoverESC() {
+  esc.writeMicroseconds(1000);
+  delay(500);
+  armESC();
 }

@@ -5,5 +5,6 @@
 
 void weaponSetup();
 void bldcSpeedControl(int percentage);
+void recoverESC();
 
 #endif

@@ -18,11 +18,16 @@ int currentBLDCPercentage = 0;
 unsigned long lastCommandTime = 0;
 unsigned long lastBatteryPrint = 0;
 
-void processCommand(int16_t left, int16_t right, int bldcPercentage) {
+void processCommand(int16_t left, int16_t right, int bldcPercentage, int calibrate) {
   if (left < -255 || left > 255 || right < -255 || right > 255) {
     Serial.println("Invalid motor speeds, ignoring command");
     return;
   }
+
+  if (calibrate > 0) {
+    recoverESC();
+  }
+
   if (bldcPercentage != 0 && bldcPercentage != 25 && bldcPercentage != 50 &&
       bldcPercentage != 75 && bldcPercentage != 100) {
     Serial.println("Invalid BLDC percentage, ignoring");
@@ -73,11 +78,11 @@ void loop() {
       radio.read(&receivedDataString, sizeof(receivedDataString));
       Serial.print("Received: ");
       Serial.println(receivedDataString);
-      int16_t receivedLeft, receivedRight, bldcPercentage;
-      if (sscanf(receivedDataString, "L%dR%dB%d", &receivedLeft, &receivedRight, &bldcPercentage) == 3) {
-        processCommand(receivedLeft, receivedRight, bldcPercentage);
+      int16_t receivedLeft, receivedRight, bldcPercentage, calibrate;
+      if (sscanf(receivedDataString, "L%dR%dB%dC%d", &receivedLeft, &receivedRight, &bldcPercentage, &calibrate) == 4) {
+        processCommand(receivedLeft, receivedRight, bldcPercentage, calibrate);
       } else if (sscanf(receivedDataString, "L%dR%d", &receivedLeft, &receivedRight) == 2) {
-        processCommand(receivedLeft, receivedRight, currentBLDCPercentage);
+        processCommand(receivedLeft, receivedRight, currentBLDCPercentage, calibrate);
         Serial.println("No BLDC percentage in message, using last value");
       } else {
         Serial.print("Error parsing: ");
