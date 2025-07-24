@@ -1,10 +1,10 @@
 #include "motion.h"
 #include <Arduino.h>
 
-const int LEFT_IN1  = 3;
-const int LEFT_IN2  = 5; 
-const int RIGHT_IN1 = 6;
-const int RIGHT_IN2 = 9;
+const int LEFT_IN1  = 5;
+const int LEFT_IN2  = 3; 
+const int RIGHT_IN1 = 9;
+const int RIGHT_IN2 = 6;
 
 void motionSetup() {
     pinMode(LEFT_IN1, OUTPUT);
