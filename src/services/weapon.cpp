@@ -22,9 +22,9 @@ void bldcSpeedControl(int percentage) {
 
   switch (percentage) {
     case 0: pulse = 1000; break;
-    case 25: pulse = 1250; break;
-    case 50: pulse = 1500; break;
-    case 75: pulse = 1750; break;
+    case 10: pulse = 1100; break;
+    case 20: pulse = 1200; break;
+    case 40: pulse = 1400; break;
     case 100: pulse = 2000; break;
     default: pulse = 1000; Serial.println("Invalid BLDC percentage, stopping motor"); break;
   }
